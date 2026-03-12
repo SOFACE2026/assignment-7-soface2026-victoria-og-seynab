@@ -19,6 +19,11 @@ public:
     // multiply elements with a constant factor on the calling thread
     void multiply_single_threaded(T factor)
     {
+        // iterate over the data vector and multiply each element with the factor
+        for (auto &it : this->data)
+        {
+            it *= factor;
+        }
     }
 
     // split the matrix in n parts and use multiple spawn one thread per paSrtition to perform the multiplication.
@@ -58,6 +63,8 @@ public:
         {
             // IMPLEMENT THIS
             // spawn new thread for each partition, to carry out the `multiply_slice` function.
+            // We use std::thread to run the function concurrently, and we pass the factor and the start and end iterators as arguments to the function.
+            workers.push_back(std::thread(multiply_slice, factor, std::get<0>(t), std::get<1>(t)));
         }
 
         // 3) It is important that the `iterators` vector used witin the thread is not freed prematurely
@@ -66,6 +73,11 @@ public:
         for (auto &worker : workers)
         {
             // IMPLEMENT THIS
+            // The calls to join() achieve that the caller waits for the thread to terminate
+            //This blocks the main thread until the specific worker thread finishes its execution, ensuring that all computations are completed before the function returns.
+            if(worker.joinable()){
+                worker.join();
+            }
         }
     }
 
@@ -121,13 +133,18 @@ private:
         return (row * n_cols) + col;
     }
 
-    // implmentation for multiplying a slice/interval of the data
+    // Implmentation for multiplying a slice/interval of the data
     // this is a static method since it needs to be passed to a thread
-    static void multiply_slice(T factor, typename std::vector<T>::iterator &begin, typename std::vector<T>::iterator &end)
+    static void multiply_slice(T factor, typename std::vector<T>::iterator begin, typename std::vector<T>::iterator end)
     {
         for (auto &it = begin; it != end; ++it)
         {
             // IMPLEMENT THIS
+            //Dereference the iterator to access the element and multiply it with the factor
+            // Store it back into the same memory location
+            // This thread only works on its assigned interval, so there is no need for mutexes.
+            *it =(*it) * factor;
+
         }
     }
 };
