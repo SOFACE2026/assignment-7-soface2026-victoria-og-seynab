@@ -19,6 +19,12 @@ public:
     // multiply elements with a constant factor on the calling thread
     void multiply_single_threaded(T factor)
     {
+        // Vi bruger en for-loop til at gennemgå hvert element i data-vektoren.
+        // &val tager fat i selve tallet, så vi kan ændre det.
+        for (auto &val : this->data){
+            val = val * factor;
+        }
+
     }
 
     // split the matrix in n parts and use multiple spawn one thread per paSrtition to perform the multiplication.
@@ -56,8 +62,13 @@ public:
         std::vector<std::thread> workers;
         for (auto &t : slices)
         {
-            // IMPLEMENT THIS
             // spawn new thread for each partition, to carry out the `multiply_slice` function.
+            //Der hentes start- og slut-iteratorer fra t
+            auto start = std::get<0>(t);
+            auto end = std::get<1>(t);
+
+            //Starter ny tråd, hvor den indeholder funktionen, konstanten, start og slut
+            workers.push_back(std::thread(multiply_slice, factor, start, end));
         }
 
         // 3) It is important that the `iterators` vector used witin the thread is not freed prematurely
@@ -65,7 +76,12 @@ public:
         // this ensures that the full computation is done when this function returns
         for (auto &worker : workers)
         {
-            // IMPLEMENT THIS
+            //Her samles alle threads.
+            //Hvis tråden stadig kører, venter vi her
+            if(worker.joinable()){
+                worker.join(); 
+                // join() fortæller tråden, den skal stoppe og vente indtil alle workers er færdige med deres udregninger.
+            }
         }
     }
 
@@ -123,11 +139,10 @@ private:
 
     // implmentation for multiplying a slice/interval of the data
     // this is a static method since it needs to be passed to a thread
-    static void multiply_slice(T factor, typename std::vector<T>::iterator &begin, typename std::vector<T>::iterator &end)
+    static void multiply_slice(T factor, typename std::vector<T>::iterator begin, typename std::vector<T>::iterator end)
     {
-        for (auto &it = begin; it != end; ++it)
-        {
-            // IMPLEMENT THIS
+        for (typename std::vector<T>::iterator it = begin; it != end; ++it){
+            *it = *it * factor;
         }
     }
 };
